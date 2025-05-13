@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>HomeRun Hit!!</title>
+  <style>
+    body {
+      margin: 0;
+      overflow: hidden;
+      background: #cceeff;
+      font-family: sans-serif;
+    }
+    #score {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      font-size: 24px;
+      color: #000;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="game"></canvas>
+  <div id="score">Score: 0</div>
+
+  <script>
+    const canvas = document.getElementById("game");
+    const ctx = canvas.getContext("2d");
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+
+    let ball = { x: 100, y: canvas.height - 100, vx: 8, vy: -15, radius: 10, inAir: false };
+    let bat = { x: canvas.width / 2, y: canvas.height - 80, width: 100, height: 10, swinging: false };
+    let score = 0;
+    const homerunLineX = canvas.width * 0.6;
+
+    function drawBall() {
+      ctx.beginPath();
+      ctx.arc(ball.x, ball.y, ball.radius, 0, Math.PI * 2);
+      ctx.fillStyle = "red";
+      ctx.fill();
+      ctx.closePath();
+    }
+
+    function drawBat() {
+      ctx.fillStyle = bat.swinging ? "orange" : "brown";
+      ctx.fillRect(bat.x - bat.width / 2, bat.y, bat.width, bat.height);
+    }
+
+    function drawHomerunLine() {
+      ctx.beginPath();
+      ctx.moveTo(homerunLineX, 0);
+      ctx.lineTo(homerunLineX, canvas.height);
+      ctx.strokeStyle = "green";
+      ctx.setLineDash([5, 5]);
+      ctx.stroke();
+      ctx.setLineDash([]);
+    }
+
+    function resetBall() {
+      ball.x = 100;
+      ball.y = canvas.height - 100;
+      ball.vx = 8;
+      ball.vy = -15;
+      ball.inAir = true;
+    }
+
+    function updateBall() {
+      if (ball.inAir) {
+        ball.x += ball.vx;
+        ball.y += ball.vy;
+        ball.vy += 0.6; // gravity
+      }
+
+      // Off screen
+      if (ball.y > canvas.height || ball.x > canvas.width) {
+        ball.inAir = false;
+        setTimeout(resetBall, 1000);
+      }
+    }
+
+    function checkHit() {
+      if (!ball.inAir || !bat.swinging) return;
+
+      const isYInRange = ball.y + ball.radius >= bat.y && ball.y - ball.radius <= bat.y + bat.height;
+      const isXInRange = ball.x >= bat.x - bat.width / 2 && ball.x <= bat.x + bat.width / 2;
+
+      if (isYInRange && isXInRange) {
+        ball.vy = -20;
+        ball.vx = 10;
+        if (ball.x > homerunLineX) {
+          score += 10;
+          document.getElementById("score").innerText = "Score: " + score;
+        }
+        bat.swinging = false;
+      }
+    }
+
+    function gameLoop() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      drawBall();
+      drawBat();
+      drawHomerunLine();
+      updateBall();
+      checkHit();
+      requestAnimationFrame(gameLoop);
+    }
+
+    canvas.addEventListener("touchstart", (e) => {
+      e.preventDefault();
+      if (!ball.inAir) return;
+      bat.swinging = true;
+      setTimeout(() => bat.swinging = false, 200);
+    });
+
+    canvas.addEventListener("click", () => {
+      if (!ball.inAir) return;
+      bat.swinging = true;
+      setTimeout(() => bat.swinging = false, 200);
+    });
+
+    resetBall();
+    gameLoop();
+  </script>
+</body>
+</html>
